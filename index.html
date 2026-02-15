@@ -186,19 +186,25 @@
         };
 
         const scene = new THREE.Scene();
-        // Remove fog/background color to let video show through
-        // scene.fog = new THREE.FogExp2(0x000000, 0.002); 
+
+        // Video Background Strategy
+        const videoElement = document.getElementById('bg-video');
+        if (videoElement) {
+            const videoTexture = new THREE.VideoTexture(videoElement);
+            videoTexture.minFilter = THREE.LinearFilter;
+            videoTexture.magFilter = THREE.LinearFilter;
+            videoTexture.format = THREE.RGBFormat;
+            scene.background = videoTexture;
+        }
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 3000);
         camera.position.z = 1000;
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true }); // Alpha not strictly needed if we have background
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.0;
-        // Transparent clear color for video visibility
-        renderer.setClearColor(0x000000, 0);
         document.body.appendChild(renderer.domElement);
 
         const renderScene = new THREE.RenderPass(scene, camera);
