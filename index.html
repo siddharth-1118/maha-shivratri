@@ -87,10 +87,25 @@
             transition: opacity 0.1s ease-out;
         }
     </style>
+    #bg-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0; /* Behind canvas (z-index 1) */
+    opacity: 0.6; /* Slight transparency to blend with black body */
+    }
+    </style>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
+
+    <video id="bg-video" loop muted playsinline>
+        <source src="background.mp4" type="video/mp4">
+    </video>
 
     <div id="vignette"></div>
     <div id="flash"></div>
