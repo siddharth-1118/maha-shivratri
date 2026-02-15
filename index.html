@@ -155,7 +155,7 @@
 
     <script>
         const config = {
-            bloomStrength: 2.5, // Increased for cinematic bloom
+            bloomStrength: 2.5,
             bloomRadius: 0.5,
             bloomThreshold: 0,
             audioSensitivity: 1.0
@@ -174,10 +174,10 @@
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 3000);
         camera.position.z = 1000;
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // Alpha for transparency if needed
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.toneMapping = THREE.ACESFilmicToneMapping; // Cinematic Tone Mapping
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.0;
         document.body.appendChild(renderer.domElement);
 
@@ -213,10 +213,9 @@
         let embers, cosmicDust, shockwaveBlue, shockwaveGold, shivaForm, blessingParticles, crackMesh, godRays, sparks;
         const particleGroups = [];
 
-        // --- 1. THE CRACK (Golden Fissure) ---
+        // --- 1. THE CRACK ---
         function createCrack() {
             const points = [];
-            // Jagged line down the center
             let y = 600;
             points.push(new THREE.Vector3(0, y, -500));
             while (y > -200) {
@@ -272,27 +271,25 @@
         cosmicDust = createParticles(2000, 0x4444ff, 10);
         particleGroups.push(embers, cosmicDust);
 
-        // --- 3. SHIVA FORM (With Ash & Light) ---
+        // --- 3. SHIVA FORM ---
         function createShivaForm() {
             const geometry = new THREE.BufferGeometry();
             const positions = [];
             const colors = [];
             const sizes = [];
 
-            // Colors: Divine Light (Cyan/White) & Ash (Grey)
             const lightColor = new THREE.Color(0x00ffff);
             const ashColor = new THREE.Color(0xaaaaaa);
 
-            const count = 10000; // High density for 8K feel
+            const count = 10000;
             for (let i = 0; i < count; i++) {
                 const theta = Math.random() * Math.PI * 2;
                 const h = Math.random() * 250;
-                // Meditating shape approximations
                 let r = 0;
-                if (h < 50) r = 80; // Legs/Base
-                else if (h < 150) r = 40 + Math.sin(h) * 10; // Torso
-                else r = 30; // Head area
-                r += (Math.random() - 0.5) * 10; // Noise
+                if (h < 50) r = 80;
+                else if (h < 150) r = 40 + Math.sin(h) * 10;
+                else r = 30;
+                r += (Math.random() - 0.5) * 10;
 
                 const x = r * Math.cos(theta);
                 const y = h - 120;
@@ -300,7 +297,6 @@
 
                 positions.push(x, y, z);
 
-                // Mix Ash and Light
                 if (Math.random() > 0.7) {
                     colors.push(lightColor.r, lightColor.g, lightColor.b);
                 } else {
@@ -310,13 +306,12 @@
                 sizes.push(3 + Math.random() * 8);
             }
 
-            // Trident (Trishul)
             for (let i = 0; i < 2000; i++) {
                 const y = (Math.random() * 500) - 100;
                 const x = (Math.random() - 0.5) * 10;
                 const z = (Math.random() - 0.5) * 10;
                 positions.push(x + 100, y, z);
-                colors.push(1, 0.8, 0.2); // Gold
+                colors.push(1, 0.8, 0.2);
                 sizes.push(10);
             }
 
@@ -346,7 +341,6 @@
 
         // --- 4. BLESSING PARTICLES ---
         function createBlessingParticles() {
-            // Same as before logic
             const geometry = new THREE.BufferGeometry();
             const positions = [];
             const colors = [];
@@ -378,7 +372,7 @@
         }
         createBlessingParticles();
 
-        // --- 5. SPARKS (Impact) ---
+        // --- 5. SPARKS ---
         function createSparks() {
             const geometry = new THREE.BufferGeometry();
             const positions = [];
@@ -386,7 +380,7 @@
             const colors = [];
 
             for (let i = 0; i < 500; i++) {
-                positions.push(100, -100, -400); // Trishul base approx
+                positions.push(100, -100, -400);
                 const angle = Math.random() * Math.PI * 2;
                 const speed = Math.random() * 20 + 10;
                 velocities.push(Math.cos(angle) * speed, Math.random() * 20, Math.sin(angle) * speed);
@@ -396,7 +390,6 @@
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
             geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 
-            // Simple Points Material
             const material = new THREE.PointsMaterial({ size: 5, vertexColors: true, blending: THREE.AdditiveBlending });
             sparks = new THREE.Points(geometry, material);
             sparks.userData = { velocities: velocities, active: false };
@@ -418,64 +411,97 @@
             });
             godRays = new THREE.Mesh(geometry, material);
             godRays.position.set(0, 300, -400);
-            godRays.rotation.x = Math.PI; // Point down
+            godRays.rotation.x = Math.PI;
             scene.add(godRays);
         }
         createGodRays();
 
-        // --- 7. AUDIO ---
+        // --- 7. AUDIO (Robust) ---
         let audioContext, analyser, dataArray;
+
         function initAudio() {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioContext.createAnalyser();
-            analyser.fftSize = 256;
-            dataArray = new Uint8Array(analyser.frequencyBinCount);
+            const safeStart = () => {
+                console.log("Safe starting timeline");
+                if (state.phase === 0) startTimeline();
+            };
 
-            const audioEl = new Audio('shiva_mantra.mp3');
-            audioEl.crossOrigin = "anonymous";
-            audioEl.loop = true;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) {
+                    console.warn("No Web Audio API");
+                    safeStart();
+                    return;
+                }
 
-            const source = audioContext.createMediaElementSource(audioEl);
-            source.connect(analyser);
-            analyser.connect(audioContext.destination);
+                audioContext = new AudioContext();
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
 
-            audioEl.play().then(() => {
-                startTimeline();
-            }).catch(e => {
-                console.warn(e);
-                startTimeline(true);
-            });
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+                const audioEl = new Audio('shiva_mantra.mp3');
+                audioEl.crossOrigin = "anonymous";
+                audioEl.loop = true;
+
+                audioEl.addEventListener('error', (e) => {
+                    console.warn("Audio Element Error", e);
+                    safeStart();
+                });
+
+                try {
+                    const source = audioContext.createMediaElementSource(audioEl);
+                    source.connect(analyser);
+                    analyser.connect(audioContext.destination);
+                } catch (err) {
+                    console.warn("CORS/Source Error", err);
+                }
+
+                const p = audioEl.play();
+                if (p !== undefined) {
+                    p.then(() => {
+                        console.log("Audio playing");
+                        safeStart();
+                    }).catch(e => {
+                        console.warn("Autoplay failed", e);
+                        safeStart();
+                    });
+                } else {
+                    safeStart();
+                }
+
+            } catch (e) {
+                console.error("Audio Fatal", e);
+                safeStart();
+            }
         }
 
         // --- 8. TIMELINE ---
         function startTimeline() {
-            state.phase = 1; // Void
+            state.phase = 1;
 
-            // Phase 2: Crack appearing (3s)
             setTimeout(() => {
                 state.phase = 2;
                 state.shakeIntensity = 5;
             }, 3000);
 
-            // Phase 3: Impact (6s)
             setTimeout(() => {
                 state.phase = 3;
                 triggerImpact();
             }, 6000);
 
-            // Phase 4: Reveal (7s)
             setTimeout(() => {
                 state.phase = 4;
             }, 7000);
         }
 
         function triggerImpact() {
-            // Flash
             const flash = document.getElementById('flash');
             flash.style.opacity = 1;
             setTimeout(() => { flash.style.opacity = 0; }, 150);
 
-            // Shockwave 1: Gold (Inner)
             const geo1 = new THREE.TorusGeometry(10, 5, 16, 100);
             const mat1 = new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
             shockwaveGold = new THREE.Mesh(geo1, mat1);
@@ -484,7 +510,6 @@
             shockwaveGold.position.z = -400;
             scene.add(shockwaveGold);
 
-            // Shockwave 2: Neelkanth Blue (Outer)
             const geo2 = new THREE.TorusGeometry(20, 10, 16, 100);
             const mat2 = new THREE.MeshBasicMaterial({ color: 0x2e0057, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending });
             shockwaveBlue = new THREE.Mesh(geo2, mat2);
@@ -493,7 +518,6 @@
             shockwaveBlue.position.z = -400;
             scene.add(shockwaveBlue);
 
-            // Sparks
             sparks.visible = true;
             sparks.userData.active = true;
         }
@@ -517,16 +541,17 @@
             const delta = clock.getDelta();
             const time = clock.getElapsedTime();
 
-            if (analyser) {
+            if (analyser && dataArray) {
                 analyser.getByteFrequencyData(dataArray);
                 const avg = dataArray.reduce((a, b) => a + b) / dataArray.length;
                 config.audioSensitivity = 1 + (avg / 128);
+            } else {
+                config.audioSensitivity = 1 + Math.sin(time * 2) * 0.2;
             }
 
-            // Camera Parallax & Shake
             const targetX = mouse.x * 30;
             const targetY = mouse.y * 30;
-            if (state.phase === 2 || state.phase === 3) { // Shake during crack & impact
+            if (state.phase === 2 || state.phase === 3) {
                 camera.position.x = targetX + (Math.random() - 0.5) * state.shakeIntensity;
                 camera.position.y = targetY + (Math.random() - 0.5) * state.shakeIntensity;
             } else {
@@ -535,23 +560,20 @@
             }
             camera.lookAt(0, 0, -400);
 
-            // Crack Animation
             if (state.phase === 2 && crackMesh) {
                 crackMesh.material.opacity = Math.min(1, crackMesh.material.opacity + delta);
-                crackMesh.scale.x = 1 + Math.random() * 0.1; // jitter
+                crackMesh.scale.x = 1 + Math.random() * 0.1;
             }
 
-            // Shockwaves
             if (shockwaveGold) {
                 shockwaveGold.scale.multiplyScalar(1 + (3 * delta));
                 shockwaveGold.material.opacity -= delta * 0.5;
             }
             if (shockwaveBlue) {
-                shockwaveBlue.scale.multiplyScalar(1 + (2 * delta)); // Slower, bigger
+                shockwaveBlue.scale.multiplyScalar(1 + (2 * delta));
                 shockwaveBlue.material.opacity -= delta * 0.3;
             }
 
-            // Sparks
             if (sparks && sparks.userData.active) {
                 const pos = sparks.geometry.attributes.position.array;
                 const vels = sparks.userData.velocities;
@@ -559,38 +581,30 @@
                     pos[i] += vels[i / 3 * 3] * delta * 10;
                     pos[i + 1] += vels[i / 3 * 3 + 1] * delta * 10;
                     pos[i + 2] += vels[i / 3 * 3 + 2] * delta * 10;
-                    vels[i / 3 * 3 + 1] -= 9.8 * delta; // Gravity
+                    vels[i / 3 * 3 + 1] -= 9.8 * delta;
                 }
                 sparks.geometry.attributes.position.needsUpdate = true;
                 sparks.material.opacity -= delta * 0.5;
             }
 
-            // Reveal Phase
             if (state.phase >= 4) {
-                // Shiva Fade In
                 if (shivaForm.material.opacity < 1) shivaForm.material.opacity += delta * 0.5;
-                shivaForm.position.z += 10 * delta; // Slow approach
+                shivaForm.position.z += 10 * delta;
 
-                // God Rays
                 if (godRays.material.opacity < 0.3) godRays.material.opacity += delta * 0.1;
                 godRays.rotation.y += delta * 0.1;
 
-                // Breathing Bloom
                 bloomPass.strength = config.bloomStrength * config.audioSensitivity + Math.sin(time) * 0.2;
 
-                // Blessing Particles
                 if (blessingParticles) {
                     blessingParticles.material.opacity = shivaForm.material.opacity;
                     const bPos = blessingParticles.geometry.attributes.position.array;
                     const bVels = blessingParticles.userData.velocities;
 
                     for (let i = 0; i < bVels.length; i++) {
-                        // Move Forward towards camera + spread
                         bPos[i * 3] += bVels[i].x * config.audioSensitivity;
                         bPos[i * 3 + 1] += bVels[i].y * config.audioSensitivity;
                         bPos[i * 3 + 2] += bVels[i].z * config.audioSensitivity * 2;
-
-                        // Reset if passed camera
                         if (bPos[i * 3 + 2] > 1000) {
                             bPos[i * 3] = shivaForm.position.x + (Math.random() - 0.5) * 50;
                             bPos[i * 3 + 1] = shivaForm.position.y + (Math.random() - 0.5) * 50;
@@ -601,7 +615,6 @@
                 }
             }
 
-            // General Particles
             particleGroups.forEach(g => {
                 g.mesh.rotation.y = time * 0.02;
             });
