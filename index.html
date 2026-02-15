@@ -1,443 +1,507 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maha Shivratri - immersive Experience</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Maha Shivratri: The Divine Descent</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
-
-        :root {
-            --primary-glow: #ffd700;
-            --secondary-glow: #ffffff;
-            --deep-space: #000000;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            background-color: var(--deep-space);
-            color: white;
-            font-family: 'Cinzel', serif;
+            margin: 0;
             overflow: hidden;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            perspective: 1000px;
+            background-color: #000;
+            font-family: 'Cinzel', serif;
         }
 
-        /* Cosmic Background */
-        #cosmos {
-            position: fixed;
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        #ui-layer {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1;
-            background: radical-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
-        }
-
-        .star {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle var(--duration) infinite ease-in-out;
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.2; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.2); }
-        }
-
-        /* Main Container */
-        .container {
-            text-align: center;
             z-index: 10;
-            transition: all 1.5s ease-in-out;
-        }
-
-        /* Pulsing Button */
-        .om-button {
-            background: transparent;
-            border: 2px solid var(--primary-glow);
-            color: var(--primary-glow);
-            padding: 20px 40px;
-            font-size: 2rem;
-            font-family: 'Cinzel', serif;
-            cursor: pointer;
-            border-radius: 50px;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-            animation: pulse 2s infinite;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .om-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
-            transition: 0.5s;
-        }
-
-        .om-button:hover::before {
-            left: 100%;
-        }
-
-        .om-button:hover {
-            box-shadow: 0 0 40px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(255, 215, 0, 0.2);
-            transform: scale(1.05);
-            text-shadow: 0 0 10px var(--primary-glow);
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); }
-            70% { box-shadow: 0 0 0 20px rgba(255, 215, 0, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
-        }
-
-        /* Hidden Content (Carousel) */
-        .hidden {
-            opacity: 0;
             pointer-events: none;
-            position: absolute;
-            transform: translateY(50px) scale(0.9);
-            transition: all 1s ease;
-        }
-
-        .visible {
-            opacity: 1;
-            pointer-events: all;
-            transform: translateY(0) scale(1);
-        }
-
-        .carousel-container {
-            width: 80vw;
-            max-width: 1000px;
-            height: 60vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            perspective: 1200px;
-            position: relative;
-        }
-        
-        /* 3D Tilt Card */
-        .shiva-card {
-            width: 300px;
-            height: 450px;
-            background-size: cover;
-            background-position: center;
-            border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            transform-style: preserve-3d;
-            transition: transform 0.1s ease-out;
-            position: relative;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
         }
 
-        .shiva-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            border-radius: 20px;
-        }
-
-        .card-content {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            transform: translateZ(50px);
-            text-align: left;
-            z-index: 2;
-        }
-
-        .card-content h2 {
+        #start-btn {
+            pointer-events: auto;
+            background: transparent;
+            color: #ffd700;
+            border: 2px solid #ffd700;
+            padding: 15px 40px;
             font-size: 1.5rem;
-            color: var(--primary-glow);
-            margin-bottom: 5px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        }
-
-        .card-content p {
-            font-size: 0.9rem;
-            color: #ddd;
-        }
-
-        /* Navigation */
-        .nav-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            font-size: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
             cursor: pointer;
-            padding: 10px 20px;
-            border-radius: 50%;
-            backdrop-filter: blur(5px);
-            transition: all 0.3s;
-            margin: 0 20px;
+            transition: all 0.5s;
+            font-family: inherit;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
         }
 
-        .nav-btn:hover {
-            background: rgba(255, 215, 0, 0.3);
+        #start-btn:hover {
+            background: rgba(255, 215, 0, 0.1);
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
             transform: scale(1.1);
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .om-button {
-                font-size: 1.5rem;
-                padding: 15px 30px;
-            }
-            .shiva-card {
-                width: 260px;
-                height: 380px;
-            }
+        .fade-out {
+            opacity: 0;
+            transition: opacity 2s ease-out;
+            pointer-events: none !important;
+        }
+
+        /* Vignette Overlay */
+        #vignette {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 40%, black 100%);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* Flash Effect */
+        #flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            z-index: 20;
+            pointer-events: none;
+            transition: opacity 0.1s ease-out;
         }
     </style>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
-    <!-- Cosmic Background Canvas -->
-    <canvas id="cosmos"></canvas>
+    <div id="vignette"></div>
+    <div id="flash"></div>
 
-    <!-- Initial State: Button -->
-    <div id="intro" class="container">
-        <button id="omBtn" class="om-button">Om Namah Shivaya</button>
+    <div id="ui-layer">
+        <h1 style="color: white; font-size: 1rem; letter-spacing: 3px; margin-bottom: 2rem; opacity: 0.7;">Experience
+            the Void</h1>
+        <button id="start-btn">Enter Interaction</button>
     </div>
 
-    <!-- Hidden State: Carousel -->
-    <div id="gallery" class="container hidden">
-        <div class="carousel-container">
-            <button class="nav-btn" id="prevBtn">&#10094;</button>
-            
-            <div class="shiva-card" id="card">
-                <div class="card-content">
-                    <h2 id="cardTitle">The Cosmic Dancer</h2>
-                    <p id="cardDesc">Nataraja - The source of all movement within the cosmos.</p>
-                </div>
-            </div>
+    <!-- Three.js & Post Processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
 
-            <button class="nav-btn" id="nextBtn">&#10095;</button>
-        </div>
-        
-        <!-- Audio Player (Hidden visual, accessible via JS) -->
-        <audio id="mantraAudio" loop>
-            <!-- User to add their own audio source here -->
-            <source src="shiva_mantra.mp3" type="audio/mpeg">
-        </audio>
-    </div>
+    <!-- Custom Particle Shaders -->
+    <script type="x-shader/x-vertex" id="vertexshader">
+        attribute float size;
+        attribute vec3 customColor;
+        varying vec3 vColor;
+        void main() {
+            vColor = customColor;
+            vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+            gl_PointSize = size * ( 300.0 / -mvPosition.z );
+            gl_Position = projectionMatrix * mvPosition;
+        }
+    </script>
 
-    <!-- Dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script type="x-shader/x-fragment" id="fragmentshader">
+        uniform vec3 color;
+        uniform sampler2D pointTexture;
+        varying vec3 vColor;
+        void main() {
+            gl_FragColor = vec4( color * vColor, 1.0 );
+            gl_FragColor = gl_FragColor * texture2D( pointTexture, gl_PointCoord );
+        }
+    </script>
 
     <script>
-        // --- Cosmic Background ---
-        const canvas = document.getElementById('cosmos');
-        const ctx = canvas.getContext('2d');
-        let width, height;
-        let stars = [];
+        // --- 1. CONFIG & STATE ---
+        const config = {
+            bloomStrength: 1.5,
+            bloomRadius: 0.4,
+            bloomThreshold: 0,
+            audioSensitivity: 1.0 // will be modulated
+        };
 
-        function resize() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
-            createStars();
+        let state = {
+            phase: 0, // 0: Start, 1: Void, 2: Disturbance, 3: Impact, 4: Reveal
+            time: 0,
+            shakeIntensity: 0
+        };
+
+        // --- 2. THREE.JS SETUP ---
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.002);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 3000);
+        camera.position.z = 1000;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: false });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        document.body.appendChild(renderer.domElement);
+
+        // --- 3. POST PROCESSING (BLOOM) ---
+        const renderScene = new THREE.RenderPass(scene, camera);
+        const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = config.bloomThreshold;
+        bloomPass.strength = config.bloomStrength;
+        bloomPass.radius = config.bloomRadius;
+
+        const composer = new THREE.EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // --- 4. PARTICLE SYSTEMS ---
+
+        // Helper to create texture
+        function getSprite() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+            grad.addColorStop(0, 'rgba(255,255,255,1)');
+            grad.addColorStop(0.2, 'rgba(240,240,240,1)');
+            grad.addColorStop(0.5, 'rgba(200,200,200,0.5)');
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 32, 32);
+            const texture = new THREE.Texture(canvas);
+            texture.needsUpdate = true;
+            return texture;
         }
 
-        function createStars() {
-            stars = [];
-            const starCount = Math.floor((width * height) / 800);
-            for (let i = 0; i < starCount; i++) {
-                stars.push({
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    size: Math.random() * 2,
-                    opacity: Math.random(),
-                    speed: Math.random() * 0.05 + 0.01
-                });
+        const particleSprite = getSprite();
+
+        // SYSTEMS
+        let embers, cosmicDust, shockwave, shivaForm;
+        const particleGroups = [];
+
+        function createParticles(count, color, sizeBase, type) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+            const sizes = [];
+            const colorObj = new THREE.Color(color);
+
+            for (let i = 0; i < count; i++) {
+                // Random position in a sphere/cube
+                const x = (Math.random() * 2 - 1) * 1000;
+                const y = (Math.random() * 2 - 1) * 1000;
+                const z = (Math.random() * 2 - 1) * 1000;
+                positions.push(x, y, z);
+                colors.push(colorObj.r, colorObj.g, colorObj.b);
+                sizes.push(sizeBase * Math.random());
             }
-        }
 
-        function drawStars() {
-            ctx.clearRect(0, 0, width, height);
-            
-            // Draw Nebulous Gradient Background (Simulated)
-            const gradient = ctx.createLinearGradient(0, 0, 0, height);
-            gradient.addColorStop(0, '#020014');
-            gradient.addColorStop(1, '#090a1f');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, width, height);
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
 
-            ctx.fillStyle = 'white';
-            stars.forEach(star => {
-                ctx.globalAlpha = star.opacity;
-                ctx.beginPath();
-                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Twinkle effect
-                star.opacity += (Math.random() - 0.5) * 0.1;
-                if (star.opacity < 0) star.opacity = 0;
-                if (star.opacity > 1) star.opacity = 1;
-
-                // Subtle movement
-                star.y -= star.speed;
-                if (star.y < 0) star.y = height;
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    color: { value: new THREE.Color(0xffffff) },
+                    pointTexture: { value: particleSprite }
+                },
+                vertexShader: document.getElementById('vertexshader').textContent,
+                fragmentShader: document.getElementById('fragmentshader').textContent,
+                blending: THREE.AdditiveBlending,
+                depthTest: false,
+                transparent: true
             });
-            requestAnimationFrame(drawStars);
+
+            const particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+
+            return { mesh: particles, type: type, originalPositions: positions, speeds: [] };
         }
 
-        window.addEventListener('resize', resize);
-        resize();
-        drawStars();
+        // Initialize Systems
+        embers = createParticles(2000, 0xffaa00, 20, 'embers');     // Gold
+        cosmicDust = createParticles(3000, 0x4444ff, 10, 'dust');   // Blue
+        particleGroups.push(embers, cosmicDust);
 
-        // --- Interaction Logic ---
-        const omBtn = document.getElementById('omBtn');
-        const intro = document.getElementById('intro');
-        const gallery = document.getElementById('gallery');
-        const audio = document.getElementById('mantraAudio');
+        // Trishul / Shiva Form Geometry (Procedural Representation)
+        function createShivaForm() {
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+            const sizes = [];
+            const colorObj = new THREE.Color(0x00ffff); // Cyan/White divine light
 
-        omBtn.addEventListener('click', () => {
-             // 1. Confetti Explosion (Gold & White)
-             const duration = 3000;
-             const end = Date.now() + duration;
+            // Create a vague silhouette of a seated figure + Trident
+            const count = 5000;
+            for (let i = 0; i < count; i++) {
+                // Cylindrical coords for body
+                const theta = Math.random() * Math.PI * 2;
+                const h = Math.random() * 200; // height
+                const r = 20 + Math.random() * 20 * Math.sin(h / 200 * Math.PI); // rough body shape
 
-             (function frame() {
-                confetti({
-                    particleCount: 5,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: ['#ffd700', '#ffffff']
-                });
-                confetti({
-                    particleCount: 5,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: ['#ffd700', '#ffffff']
-                });
+                const x = r * Math.cos(theta);
+                const y = h - 100; // Center vertically
+                const z = r * Math.sin(theta);
 
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
-                }
-             }());
-
-             // Big Burst
-             confetti({
-                 particleCount: 150,
-                 spread: 70,
-                 origin: { y: 0.6 },
-                 colors: ['#ffd700', '#ffffff']
-             });
-
-             // 2. Play Audio
-             // Note: Most browsers require user interaction to play audio. 
-             // We are inside a click handler, so it should work.
-             audio.play().catch(err => {
-                 console.log("Audio playback failed (likely no file or policy blocked):", err);
-                 // alert("Please add 'shiva_mantra.mp3' to the folder for audio.");
-             });
-
-             // 3. Transition to Gallery
-             intro.classList.add('hidden');
-             setTimeout(() => {
-                 intro.style.display = 'none';
-                 gallery.classList.remove('hidden');
-                 gallery.classList.add('visible');
-             }, 1000);
-        });
-
-        // --- Carousel & 3D Tilt ---
-        const card = document.getElementById('card');
-        const cardTitle = document.getElementById('cardTitle');
-        const cardDesc = document.getElementById('cardDesc');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-
-        // Placeholder Data - User should replace URLs
-        const shivaImages = [
-            {
-                url: 'https://images.unsplash.com/photo-1620325497257-2e21019a1860?q=80&w=1000&auto=format&fit=crop', // Example Cosmic/Generic
-                title: "The Cosmic Dancer",
-                desc: "Nataraja - The source of all movement within the cosmos."
-            },
-            {
-                url: 'https://images.unsplash.com/photo-1599827416345-2f9a7245b73d?q=80&w=1000&auto=format&fit=crop', // Example Statue
-                title: "The Adiyogi",
-                desc: "The first yogi, transmitting the science of Yoga."
-            },
-            {
-                url: 'https://images.unsplash.com/photo-1544158462-8e100808a09f?q=80&w=1000&auto=format&fit=crop', // Example Light
-                title: "Mahadev",
-                desc: "The Great God, beyond time and space."
+                positions.push(x, y, z);
+                colors.push(colorObj.r, colorObj.g, colorObj.b);
+                sizes.push(5 + Math.random() * 10);
             }
-        ];
 
-        let currentIndex = 0;
+            // Trident (Stick + Prongs)
+            for (let i = 0; i < 1000; i++) {
+                const y = (Math.random() * 400) - 100;
+                const x = (Math.random() - 0.5) * 10;
+                const z = (Math.random() - 0.5) * 10;
+                positions.push(x + 100, y, z); // Offset trident
+                colors.push(1, 0.8, 0); // Gold
+                sizes.push(15);
+            }
 
-        function updateCard() {
-            // Add a fade out/in effect
-            card.style.opacity = 0;
-            setTimeout(() => {
-                card.style.backgroundImage = `url('${shivaImages[currentIndex].url}')`;
-                cardTitle.textContent = shivaImages[currentIndex].title;
-                cardDesc.textContent = shivaImages[currentIndex].desc;
-                card.style.opacity = 1;
-            }, 200);
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    color: { value: new THREE.Color(0xffffff) },
+                    pointTexture: { value: particleSprite }
+                },
+                vertexShader: document.getElementById('vertexshader').textContent,
+                fragmentShader: document.getElementById('fragmentshader').textContent,
+                blending: THREE.AdditiveBlending,
+                depthTest: false,
+                transparent: true,
+                opacity: 0 // Start invisible
+            });
+
+            shivaForm = new THREE.Points(geometry, material);
+            shivaForm.material.opacity = 0; // Ensure invisible start
+            shivaForm.visible = false;
+            scene.add(shivaForm);
         }
 
-        // Initialize First Card
-        updateCard();
+        createShivaForm();
 
-        nextBtn.addEventListener('click', () => {
-            currentIndex = (currentIndex + 1) % shivaImages.length;
-            updateCard();
+
+        // --- 5. AUDIO SYSTEM ---
+        let audioContext, analyser, dataArray;
+        let audioLevel = 0;
+
+        function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+            // Simple Oscillator drone for "Om" if no file, but user requested file.
+            // We will attempt to load file, fall back to oscillator if interaction allows.
+
+            const audioEl = new Audio('shiva_mantra.mp3'); // Try to load
+            audioEl.crossOrigin = "anonymous";
+            audioEl.loop = true;
+
+            const source = audioContext.createMediaElementSource(audioEl);
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+
+            audioEl.play().then(() => {
+                console.log("Audio playing");
+                startTimeline();
+            }).catch(e => {
+                console.warn("Audio play failed, starting silent timeline:", e);
+                startTimeline(true); // silent mode
+            });
+        }
+
+        // --- 6. NARRATIVE TIMELINE ---
+        function startTimeline(silent) {
+            state.phase = 1; // VOID
+            const startTime = Date.now();
+
+            // Phase 2: DISTURBANCE starts at 3s
+            setTimeout(() => {
+                state.phase = 2;
+                state.shakeIntensity = 5;
+            }, 3000);
+
+            // Phase 3: IMPACT at 6s
+            setTimeout(() => {
+                state.phase = 3;
+                triggerImpact();
+            }, 6000);
+
+            // Phase 4: REVEAL at 7s
+            setTimeout(() => {
+                state.phase = 4;
+                revealShiva();
+            }, 7000);
+        }
+
+        function triggerImpact() {
+            // Flash Screen
+            const flash = document.getElementById('flash');
+            flash.style.opacity = 1;
+            setTimeout(() => { flash.style.opacity = 0; }, 200);
+
+            // Create Shockwave Ring
+            const geometry = new THREE.TorusGeometry(10, 5, 16, 100);
+            const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+            shockwave = new THREE.Mesh(geometry, material);
+            shockwave.rotation.x = Math.PI / 2;
+            scene.add(shockwave);
+        }
+
+        function revealShiva() {
+            shivaForm.visible = true;
+            // Animate opacity in render loop via uniform or property
+        }
+
+
+        // --- 7. INTERACTION ---
+        const mouse = new THREE.Vector2();
+
+        document.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         });
 
-        prevBtn.addEventListener('click', () => {
-            currentIndex = (currentIndex - 1 + shivaImages.length) % shivaImages.length;
-            updateCard();
+        document.addEventListener('touchmove', (event) => {
+            if (event.touches.length > 0) {
+                mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
+            }
         });
 
-        // 3D Tilt Effect
-        document.addEventListener('mousemove', (e) => {
-            // Apply only if gallery is visible
-            if(!gallery.classList.contains('visible')) return;
-
-            const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
-            const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
-            
-            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        // Damru Ripple on click
+        document.addEventListener('click', () => {
+            if (state.phase >= 4) {
+                // Pulse effect in revealed state
+                bloomPass.strength = 3.0;
+                setTimeout(() => { bloomPass.strength = config.bloomStrength; }, 300);
+            }
         });
 
-        // Reset tilt when mouse leaves
-        document.addEventListener('mouseleave', () => {
-             card.style.transform = `rotateY(0deg) rotateX(0deg)`;
-             card.style.transition = 'all 0.5s ease';
+        document.getElementById('start-btn').addEventListener('click', () => {
+            document.getElementById('ui-layer').classList.add('fade-out');
+            initAudio(); // Start Audio Context
         });
 
-        card.addEventListener('mouseenter', () => {
-            card.style.transition = 'none'; // Remove transition for responsiveness during hover
+
+        // --- 8. RENDER LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            // Audio Analysis
+            if (analyser) {
+                analyser.getByteFrequencyData(dataArray);
+                const avg = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                config.audioSensitivity = 1 + (avg / 128); // 1.0 to 3.0 approx
+            }
+
+            // 1. Camera Movement (Parallax + Shake)
+            const baseCamX = mouse.x * 50;
+            const baseCamY = mouse.y * 50;
+
+            if (state.phase === 2) {
+                // Shake
+                camera.position.x = baseCamX + (Math.random() - 0.5) * state.shakeIntensity;
+                camera.position.y = baseCamY + (Math.random() - 0.5) * state.shakeIntensity;
+            } else {
+                // Smooth Lerp
+                camera.position.x += (baseCamX - camera.position.x) * 0.05;
+                camera.position.y += (baseCamY - camera.position.y) * 0.05;
+            }
+            camera.lookAt(scene.position);
+
+
+            // 2. Particle Animation
+            particleGroups.forEach(group => {
+                const positions = group.mesh.geometry.attributes.position.array;
+
+                for (let i = 0; i < positions.length; i += 3) {
+                    // Start Position restoration logic could go here
+                    // Simple flow:
+                    positions[i + 1] += (0.5 * config.audioSensitivity); // Move up
+
+                    // Reset if out of bounds
+                    if (positions[i + 1] > 1000) positions[i + 1] = -1000;
+
+                    // Mouse Interaction (Repel)
+                    if (state.phase >= 4) {
+                        // Logic to swirl particles?
+                    }
+                }
+                group.mesh.geometry.attributes.position.needsUpdate = true;
+                group.mesh.rotation.y = time * 0.05; // Rotate whole system
+            });
+
+
+            // 3. Phase Logic
+            if (state.phase === 3 && shockwave) {
+                shockwave.scale.x += 20 * delta;
+                shockwave.scale.y += 20 * delta;
+                shockwave.material.opacity -= 1 * delta;
+                if (shockwave.material.opacity <= 0) {
+                    scene.remove(shockwave);
+                    shockwave = null;
+                }
+            }
+
+            if (state.phase === 4 && shivaForm) {
+                shivaForm.rotation.y += 0.02 * delta;
+                // Pulse size
+                const scale = 1 + Math.sin(time * 2) * 0.05 * config.audioSensitivity;
+                shivaForm.scale.set(scale, scale, scale);
+
+                // Fade in
+                if (shivaForm.material.opacity < 0.8) shivaForm.material.opacity += 0.01;
+            }
+
+            // Bloom Pulse with Audio
+            bloomPass.strength = THREE.MathUtils.lerp(bloomPass.strength, config.bloomStrength * config.audioSensitivity, 0.1);
+
+            composer.render();
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        animate();
+
     </script>
 </body>
+
 </html>
