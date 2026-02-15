@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Maha Shivratri: The Divine Descent</title>
+    <title>Maha Shivratri: The Divine Descent (Cinematic)</title>
     <style>
         body {
             margin: 0;
@@ -106,9 +106,8 @@
     <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
 
+    <!-- Shaders -->
     <script type="x-shader/x-vertex" id="vertexshader">
         attribute float size;
         attribute vec3 customColor;
@@ -131,20 +130,42 @@
         }
     </script>
 
+    <!-- God Ray Shader -->
+    <script type="x-shader/x-vertex" id="volumetricVertex">
+        varying vec3 vNormal;
+        varying vec3 vWorldPosition;
+        void main() {
+            vNormal = normalize(normalMatrix * normal);
+            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+            vWorldPosition = worldPosition.xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    </script>
+    <script type="x-shader/x-fragment" id="volumetricFragment">
+        uniform vec3 color;
+        uniform float attenuation;
+        varying vec3 vNormal;
+        varying vec3 vWorldPosition;
+        void main() {
+            // Simple fade out based on height to simulate beam
+            float alpha = smoothstep(0.0, 1.0, (vWorldPosition.y + 500.0) / 1000.0); 
+            gl_FragColor = vec4(color, alpha * attenuation);
+        }
+    </script>
+
     <script>
         const config = {
-            bloomStrength: 1.5,
-            bloomRadius: 0.4,
+            bloomStrength: 2.5, // Increased for cinematic bloom
+            bloomRadius: 0.5,
             bloomThreshold: 0,
             audioSensitivity: 1.0
         };
 
-        // State
         let state = {
             phase: 0,
             time: 0,
             shakeIntensity: 0,
-            shivaZ: 0 // New: Track Shiva's forward movement
+            shivaZ: 0
         };
 
         const scene = new THREE.Scene();
@@ -153,10 +174,11 @@
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 3000);
         camera.position.z = 1000;
 
-        const renderer = new THREE.WebGLRenderer({ antialias: false });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // Alpha for transparency if needed
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.toneMapping = THREE.ReinhardToneMapping;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping; // Cinematic Tone Mapping
+        renderer.toneMappingExposure = 1.0;
         document.body.appendChild(renderer.domElement);
 
         const renderScene = new THREE.RenderPass(scene, camera);
@@ -169,6 +191,7 @@
         composer.addPass(renderScene);
         composer.addPass(bloomPass);
 
+        // --- Textures ---
         function getSprite() {
             const canvas = document.createElement('canvas');
             canvas.width = 32;
@@ -183,14 +206,32 @@
             ctx.fillRect(0, 0, 32, 32);
             return new THREE.Texture(canvas);
         }
-
         const particleSprite = getSprite();
         particleSprite.needsUpdate = true;
 
-        let embers, cosmicDust, shockwave, shivaForm, blessingParticles;
+        // --- Assets ---
+        let embers, cosmicDust, shockwaveBlue, shockwaveGold, shivaForm, blessingParticles, crackMesh, godRays, sparks;
         const particleGroups = [];
 
-        function createParticles(count, color, sizeBase, type) {
+        // --- 1. THE CRACK (Golden Fissure) ---
+        function createCrack() {
+            const points = [];
+            // Jagged line down the center
+            let y = 600;
+            points.push(new THREE.Vector3(0, y, -500));
+            while (y > -200) {
+                y -= 20 + Math.random() * 30;
+                points.push(new THREE.Vector3((Math.random() - 0.5) * 50, y, -500));
+            }
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ color: 0xffd700, linewidth: 2, opacity: 0, transparent: true });
+            crackMesh = new THREE.Line(geometry, material);
+            scene.add(crackMesh);
+        }
+        createCrack();
+
+        // --- 2. PARTICLES ---
+        function createParticles(count, color, sizeBase) {
             const geometry = new THREE.BufferGeometry();
             const positions = [];
             const colors = [];
@@ -198,9 +239,9 @@
             const colorObj = new THREE.Color(color);
 
             for (let i = 0; i < count; i++) {
-                const x = (Math.random() * 2 - 1) * 1000;
-                const y = (Math.random() * 2 - 1) * 1000;
-                const z = (Math.random() * 2 - 1) * 1000;
+                const x = (Math.random() * 2 - 1) * 1200;
+                const y = (Math.random() * 2 - 1) * 1200;
+                const z = (Math.random() * 2 - 1) * 1200;
                 positions.push(x, y, z);
                 colors.push(colorObj.r, colorObj.g, colorObj.b);
                 sizes.push(sizeBase * Math.random());
@@ -224,45 +265,59 @@
 
             const particles = new THREE.Points(geometry, material);
             scene.add(particles);
-
-            return { mesh: particles, type: type, originalPositions: positions };
+            return { mesh: particles, originalPositions: positions };
         }
 
-        embers = createParticles(2000, 0xffaa00, 20, 'embers');
-        cosmicDust = createParticles(3000, 0x4444ff, 10, 'dust');
+        embers = createParticles(1500, 0xffaa00, 20);
+        cosmicDust = createParticles(2000, 0x4444ff, 10);
         particleGroups.push(embers, cosmicDust);
 
+        // --- 3. SHIVA FORM (With Ash & Light) ---
         function createShivaForm() {
             const geometry = new THREE.BufferGeometry();
             const positions = [];
             const colors = [];
             const sizes = [];
-            // Cyan/White glow
-            const colorObj = new THREE.Color(0x00ffff);
 
-            const count = 7000;
+            // Colors: Divine Light (Cyan/White) & Ash (Grey)
+            const lightColor = new THREE.Color(0x00ffff);
+            const ashColor = new THREE.Color(0xaaaaaa);
+
+            const count = 10000; // High density for 8K feel
             for (let i = 0; i < count; i++) {
                 const theta = Math.random() * Math.PI * 2;
-                const h = Math.random() * 200;
-                const r = 20 + Math.random() * 25 * Math.sin(h / 200 * Math.PI); // Body shape
+                const h = Math.random() * 250;
+                // Meditating shape approximations
+                let r = 0;
+                if (h < 50) r = 80; // Legs/Base
+                else if (h < 150) r = 40 + Math.sin(h) * 10; // Torso
+                else r = 30; // Head area
+                r += (Math.random() - 0.5) * 10; // Noise
 
                 const x = r * Math.cos(theta);
-                const y = h - 100;
+                const y = h - 120;
                 const z = r * Math.sin(theta);
 
                 positions.push(x, y, z);
-                colors.push(colorObj.r, colorObj.g, colorObj.b);
-                sizes.push(5 + Math.random() * 10);
+
+                // Mix Ash and Light
+                if (Math.random() > 0.7) {
+                    colors.push(lightColor.r, lightColor.g, lightColor.b);
+                } else {
+                    colors.push(ashColor.r, ashColor.g, ashColor.b);
+                }
+
+                sizes.push(3 + Math.random() * 8);
             }
 
-            // Trident
-            for (let i = 0; i < 1500; i++) {
-                const y = (Math.random() * 450) - 100;
-                const x = (Math.random() - 0.5) * 15;
-                const z = (Math.random() - 0.5) * 15;
-                positions.push(x + 120, y, z);
-                colors.push(1, 0.9, 0.2); // Gold
-                sizes.push(15);
+            // Trident (Trishul)
+            for (let i = 0; i < 2000; i++) {
+                const y = (Math.random() * 500) - 100;
+                const x = (Math.random() - 0.5) * 10;
+                const z = (Math.random() - 0.5) * 10;
+                positions.push(x + 100, y, z);
+                colors.push(1, 0.8, 0.2); // Gold
+                sizes.push(10);
             }
 
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -284,50 +339,36 @@
 
             shivaForm = new THREE.Points(geometry, material);
             shivaForm.material.opacity = 0;
-            // Start further back
-            shivaForm.position.z = -500;
+            shivaForm.position.z = -400;
             scene.add(shivaForm);
         }
-
         createShivaForm();
 
-        // Blessing Stream
+        // --- 4. BLESSING PARTICLES ---
         function createBlessingParticles() {
+            // Same as before logic
             const geometry = new THREE.BufferGeometry();
             const positions = [];
             const colors = [];
             const sizes = [];
-            const count = 1000;
-
-            for (let i = 0; i < count; i++) {
-                // Emit from approx hand position
+            for (let i = 0; i < 1000; i++) {
                 positions.push(0, 0, -200);
-                colors.push(1, 0.8, 0.2); // Golden
+                colors.push(1, 0.8, 0.2);
                 sizes.push(Math.random() * 30);
             }
-
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
             geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
             geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
-
-            const material = new THREE.ShaderMaterial({
-                uniforms: {
-                    color: { value: new THREE.Color(0xffffff) },
-                    pointTexture: { value: particleSprite }
-                },
+            const mat = new THREE.ShaderMaterial({
+                uniforms: { color: { value: new THREE.Color(0xffffff) }, pointTexture: { value: particleSprite } },
                 vertexShader: document.getElementById('vertexshader').textContent,
                 fragmentShader: document.getElementById('fragmentshader').textContent,
-                blending: THREE.AdditiveBlending,
-                depthTest: false,
-                transparent: true,
-                opacity: 0
+                blending: THREE.AdditiveBlending, depthTest: false, transparent: true, opacity: 0
             });
-
-            blessingParticles = new THREE.Points(geometry, material);
+            blessingParticles = new THREE.Points(geometry, mat);
             scene.add(blessingParticles);
-            // Storing velocities in userData for simplicity
             blessingParticles.userData = { velocities: [] };
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < 1000; i++) {
                 blessingParticles.userData.velocities.push({
                     x: (Math.random() - 0.5) * 5,
                     y: (Math.random() - 0.5) * 5,
@@ -337,9 +378,53 @@
         }
         createBlessingParticles();
 
+        // --- 5. SPARKS (Impact) ---
+        function createSparks() {
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const velocities = [];
+            const colors = [];
 
+            for (let i = 0; i < 500; i++) {
+                positions.push(100, -100, -400); // Trishul base approx
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 20 + 10;
+                velocities.push(Math.cos(angle) * speed, Math.random() * 20, Math.sin(angle) * speed);
+                colors.push(1, 0.9, 0.5);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            // Simple Points Material
+            const material = new THREE.PointsMaterial({ size: 5, vertexColors: true, blending: THREE.AdditiveBlending });
+            sparks = new THREE.Points(geometry, material);
+            sparks.userData = { velocities: velocities, active: false };
+            sparks.visible = false;
+            scene.add(sparks);
+        }
+        createSparks();
+
+        // --- 6. GOD RAYS ---
+        function createGodRays() {
+            const geometry = new THREE.ConeGeometry(300, 1000, 32, 1, true);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            godRays = new THREE.Mesh(geometry, material);
+            godRays.position.set(0, 300, -400);
+            godRays.rotation.x = Math.PI; // Point down
+            scene.add(godRays);
+        }
+        createGodRays();
+
+        // --- 7. AUDIO ---
         let audioContext, analyser, dataArray;
-
         function initAudio() {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             analyser = audioContext.createAnalyser();
@@ -362,45 +447,64 @@
             });
         }
 
-        function startTimeline(silent) {
-            state.phase = 1;
+        // --- 8. TIMELINE ---
+        function startTimeline() {
+            state.phase = 1; // Void
 
+            // Phase 2: Crack appearing (3s)
             setTimeout(() => {
                 state.phase = 2;
                 state.shakeIntensity = 5;
             }, 3000);
 
+            // Phase 3: Impact (6s)
             setTimeout(() => {
                 state.phase = 3;
                 triggerImpact();
             }, 6000);
 
+            // Phase 4: Reveal (7s)
             setTimeout(() => {
                 state.phase = 4;
-                revealShiva();
             }, 7000);
         }
 
         function triggerImpact() {
+            // Flash
             const flash = document.getElementById('flash');
             flash.style.opacity = 1;
-            setTimeout(() => { flash.style.opacity = 0; }, 200);
+            setTimeout(() => { flash.style.opacity = 0; }, 150);
 
-            const geometry = new THREE.TorusGeometry(10, 5, 16, 100);
-            const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
-            shockwave = new THREE.Mesh(geometry, material);
-            shockwave.rotation.x = Math.PI / 2;
-            scene.add(shockwave);
+            // Shockwave 1: Gold (Inner)
+            const geo1 = new THREE.TorusGeometry(10, 5, 16, 100);
+            const mat1 = new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
+            shockwaveGold = new THREE.Mesh(geo1, mat1);
+            shockwaveGold.rotation.x = Math.PI / 2;
+            shockwaveGold.position.y = -100;
+            shockwaveGold.position.z = -400;
+            scene.add(shockwaveGold);
+
+            // Shockwave 2: Neelkanth Blue (Outer)
+            const geo2 = new THREE.TorusGeometry(20, 10, 16, 100);
+            const mat2 = new THREE.MeshBasicMaterial({ color: 0x2e0057, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending });
+            shockwaveBlue = new THREE.Mesh(geo2, mat2);
+            shockwaveBlue.rotation.x = Math.PI / 2;
+            shockwaveBlue.position.y = -100;
+            shockwaveBlue.position.z = -400;
+            scene.add(shockwaveBlue);
+
+            // Sparks
+            sparks.visible = true;
+            sparks.userData.active = true;
         }
 
-        function revealShiva() {
-            // Logic handled in animate loop
-        }
 
+        // --- 9. ANIMATION LOOP ---
+        const clock = new THREE.Clock();
         const mouse = new THREE.Vector2();
-        document.addEventListener('mousemove', (event) => {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        document.addEventListener('mousemove', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
         });
 
         document.getElementById('start-btn').addEventListener('click', () => {
@@ -408,11 +512,8 @@
             initAudio();
         });
 
-        const clock = new THREE.Clock();
-
         function animate() {
             requestAnimationFrame(animate);
-
             const delta = clock.getDelta();
             const time = clock.getElapsedTime();
 
@@ -422,56 +523,62 @@
                 config.audioSensitivity = 1 + (avg / 128);
             }
 
-            const baseCamX = mouse.x * 50;
-            const baseCamY = mouse.y * 50;
-
-            if (state.phase === 2) {
-                camera.position.x = baseCamX + (Math.random() - 0.5) * state.shakeIntensity;
-                camera.position.y = baseCamY + (Math.random() - 0.5) * state.shakeIntensity;
+            // Camera Parallax & Shake
+            const targetX = mouse.x * 30;
+            const targetY = mouse.y * 30;
+            if (state.phase === 2 || state.phase === 3) { // Shake during crack & impact
+                camera.position.x = targetX + (Math.random() - 0.5) * state.shakeIntensity;
+                camera.position.y = targetY + (Math.random() - 0.5) * state.shakeIntensity;
             } else {
-                camera.position.x += (baseCamX - camera.position.x) * 0.05;
-                camera.position.y += (baseCamY - camera.position.y) * 0.05;
+                camera.position.x += (targetX - camera.position.x) * 0.05;
+                camera.position.y += (targetY - camera.position.y) * 0.05;
             }
-            camera.lookAt(scene.position);
+            camera.lookAt(0, 0, -400);
 
-            particleGroups.forEach(group => {
-                const positions = group.mesh.geometry.attributes.position.array;
-                for (let i = 0; i < positions.length; i += 3) {
-                    positions[i + 1] += (0.5 * config.audioSensitivity);
-                    if (positions[i + 1] > 1000) positions[i + 1] = -1000;
-                }
-                group.mesh.geometry.attributes.position.needsUpdate = true;
-                group.mesh.rotation.y = time * 0.05;
-            });
-
-            if (state.phase === 3 && shockwave) {
-                shockwave.scale.x += 20 * delta;
-                shockwave.scale.y += 20 * delta;
-                shockwave.material.opacity -= 1 * delta;
-                if (shockwave.material.opacity <= 0) {
-                    scene.remove(shockwave);
-                    shockwave = null;
-                }
+            // Crack Animation
+            if (state.phase === 2 && crackMesh) {
+                crackMesh.material.opacity = Math.min(1, crackMesh.material.opacity + delta);
+                crackMesh.scale.x = 1 + Math.random() * 0.1; // jitter
             }
 
-            // Phase 4: Reveal, Approach, and Bless
-            if (state.phase === 4 && shivaForm) {
-                shivaForm.visible = true;
+            // Shockwaves
+            if (shockwaveGold) {
+                shockwaveGold.scale.multiplyScalar(1 + (3 * delta));
+                shockwaveGold.material.opacity -= delta * 0.5;
+            }
+            if (shockwaveBlue) {
+                shockwaveBlue.scale.multiplyScalar(1 + (2 * delta)); // Slower, bigger
+                shockwaveBlue.material.opacity -= delta * 0.3;
+            }
 
-                // 1. Movement: Approach camera (from -500 to 0)
-                if (shivaForm.position.z < 0) {
-                    shivaForm.position.z += 100 * delta; // Speed of approach
+            // Sparks
+            if (sparks && sparks.userData.active) {
+                const pos = sparks.geometry.attributes.position.array;
+                const vels = sparks.userData.velocities;
+                for (let i = 0; i < vels.length; i += 3) {
+                    pos[i] += vels[i / 3 * 3] * delta * 10;
+                    pos[i + 1] += vels[i / 3 * 3 + 1] * delta * 10;
+                    pos[i + 2] += vels[i / 3 * 3 + 2] * delta * 10;
+                    vels[i / 3 * 3 + 1] -= 9.8 * delta; // Gravity
                 }
+                sparks.geometry.attributes.position.needsUpdate = true;
+                sparks.material.opacity -= delta * 0.5;
+            }
 
-                // 2. Pulse & Rotate
-                const scale = 1 + Math.sin(time * 2) * 0.05 * config.audioSensitivity;
-                shivaForm.scale.set(scale, scale, scale);
-                shivaForm.rotation.y += 0.01 * delta;
+            // Reveal Phase
+            if (state.phase >= 4) {
+                // Shiva Fade In
+                if (shivaForm.material.opacity < 1) shivaForm.material.opacity += delta * 0.5;
+                shivaForm.position.z += 10 * delta; // Slow approach
 
-                // 3. Fade in
-                if (shivaForm.material.opacity < 1.0) shivaForm.material.opacity += 0.02;
+                // God Rays
+                if (godRays.material.opacity < 0.3) godRays.material.opacity += delta * 0.1;
+                godRays.rotation.y += delta * 0.1;
 
-                // 4. Blessing Particles
+                // Breathing Bloom
+                bloomPass.strength = config.bloomStrength * config.audioSensitivity + Math.sin(time) * 0.2;
+
+                // Blessing Particles
                 if (blessingParticles) {
                     blessingParticles.material.opacity = shivaForm.material.opacity;
                     const bPos = blessingParticles.geometry.attributes.position.array;
@@ -481,11 +588,10 @@
                         // Move Forward towards camera + spread
                         bPos[i * 3] += bVels[i].x * config.audioSensitivity;
                         bPos[i * 3 + 1] += bVels[i].y * config.audioSensitivity;
-                        bPos[i * 3 + 2] += bVels[i].z * config.audioSensitivity * 2; // Fast forward
+                        bPos[i * 3 + 2] += bVels[i].z * config.audioSensitivity * 2;
 
                         // Reset if passed camera
                         if (bPos[i * 3 + 2] > 1000) {
-                            // Reset to Shiva's current position (approx)
                             bPos[i * 3] = shivaForm.position.x + (Math.random() - 0.5) * 50;
                             bPos[i * 3 + 1] = shivaForm.position.y + (Math.random() - 0.5) * 50;
                             bPos[i * 3 + 2] = shivaForm.position.z;
@@ -495,7 +601,11 @@
                 }
             }
 
-            bloomPass.strength = THREE.MathUtils.lerp(bloomPass.strength, config.bloomStrength * config.audioSensitivity, 0.1);
+            // General Particles
+            particleGroups.forEach(g => {
+                g.mesh.rotation.y = time * 0.02;
+            });
+
             composer.render();
         }
 
