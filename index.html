@@ -311,31 +311,7 @@
         }
         createBlessingParticles();
 
-        // ... [In Animation Loop] ...
-        if (blessingParticles && shivaGodMesh) {
-            blessingParticles.material.opacity = shivaGodMesh.material.opacity;
-            const bPos = blessingParticles.geometry.attributes.position.array;
-            const bVels = blessingParticles.userData.velocities;
-            const bPhases = blessingParticles.userData.phases;
-
-            for (let i = 0; i < bVels.length; i++) {
-                // Falling Physics
-                const sway = Math.sin(time * 2 + bPhases[i]) * 0.5; // Gentle sway
-
-                bPos[i * 3] += bVels[i].x + sway; // X + Sway
-                bPos[i * 3 + 1] += bVels[i].y * config.audioSensitivity; // Y (Falling)
-                bPos[i * 3 + 2] += bVels[i].z;
-
-                // Respawn
-                if (bPos[i * 3 + 1] < -600) { // If fell below screen
-                    // Spawn at Hand position (Assuming Right Hand is roughly +50, +50 from center)
-                    bPos[i * 3] = shivaGodMesh.position.x + 60 + (Math.random() - 0.5) * 40;
-                    bPos[i * 3 + 1] = shivaGodMesh.position.y + 20 + (Math.random() - 0.5) * 40;
-                    bPos[i * 3 + 2] = shivaGodMesh.position.z + 50; // In front of Shiva
-                }
-            }
-            blessingParticles.geometry.attributes.position.needsUpdate = true;
-        }
+        // ... [In Animation Loop] logic moved to animate() function
 
         // --- 5. SPARKS ---
         function createSparks() {
@@ -364,7 +340,7 @@
         createSparks();
 
         // --- 6. SHIVA GOD IMAGE (Divine Descent) ---
-        let shivaGodMesh;
+        // shivaGodMesh declared globally
         function createShivaGod() {
             const loader = new THREE.TextureLoader();
             // Using the new Cinematic Blessing image
