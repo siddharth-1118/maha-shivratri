@@ -430,13 +430,15 @@
         let shivaGodMesh;
         function createShivaGod() {
             const loader = new THREE.TextureLoader();
-            loader.load('shiva_god.png', (texture) => {
-                const geometry = new THREE.PlaneGeometry(300, 300); // Adjust aspect ratio as needed
+            // Using the new Cinematic Blessing image
+            loader.load('shiva_blessing_cinematic.png', (texture) => {
+                const geometry = new THREE.PlaneGeometry(400, 400); // Increased size for better impact
                 const material = new THREE.MeshBasicMaterial({
                     map: texture,
                     transparent: true,
                     opacity: 0,
-                    side: THREE.DoubleSide
+                    side: THREE.DoubleSide,
+                    blending: THREE.AdditiveBlending // Additive blending for "glowing" look
                 });
                 shivaGodMesh = new THREE.Mesh(geometry, material);
                 shivaGodMesh.position.set(0, 1000, -300); // Start high up
@@ -630,6 +632,10 @@
 
                     // Gentle hover effect
                     shivaGodMesh.position.y += Math.sin(time) * 0.5;
+
+                    // Pulsating Aura Effect (Scale pulse)
+                    const pulse = 1 + Math.sin(time * 2) * 0.05;
+                    shivaGodMesh.scale.set(pulse, pulse, 1);
                 }
 
                 bloomPass.strength = config.bloomStrength * config.audioSensitivity + Math.sin(time) * 0.2;
@@ -640,9 +646,10 @@
                     const bVels = blessingParticles.userData.velocities;
 
                     for (let i = 0; i < bVels.length; i++) {
-                        bPos[i * 3] += bVels[i].x * config.audioSensitivity;
-                        bPos[i * 3 + 1] += bVels[i].y * config.audioSensitivity;
-                        bPos[i * 3 + 2] += bVels[i].z * config.audioSensitivity * 2;
+                        // Slow motion magical particles
+                        bPos[i * 3] += bVels[i].x * config.audioSensitivity * 0.5; // Slower x
+                        bPos[i * 3 + 1] += bVels[i].y * config.audioSensitivity * 0.5; // Slower y
+                        bPos[i * 3 + 2] += bVels[i].z * config.audioSensitivity * 1.5; // Forward movement
 
                         // Respawn at Shiva's hand/base (approximate)
                         if (bPos[i * 3 + 2] > 500) {
