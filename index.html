@@ -237,168 +237,105 @@
         const particleSprite = getSprite();
         particleSprite.needsUpdate = true;
 
-        // --- Assets ---
-        let embers, cosmicDust, shockwaveBlue, shockwaveGold, shivaForm, blessingParticles, crackMesh, godRays, sparks;
-        const particleGroups = [];
+        function getFlowerSprite() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
 
-        // --- 1. THE CRACK ---
-        function createCrack() {
-            const points = [];
-            let y = 600;
-            points.push(new THREE.Vector3(0, y, -500));
-            while (y > -200) {
-                y -= 20 + Math.random() * 30;
-                points.push(new THREE.Vector3((Math.random() - 0.5) * 50, y, -500));
+            // Draw a simple 5-petal flower
+            ctx.translate(32, 32);
+            ctx.fillStyle = '#ff99cc'; // Pinkish
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.ellipse(0, -15, 8, 15, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.rotate((Math.PI * 2) / 5);
             }
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const material = new THREE.LineBasicMaterial({ color: 0xffd700, linewidth: 2, opacity: 0, transparent: true });
-            crackMesh = new THREE.Line(geometry, material);
-            scene.add(crackMesh);
+            // Center
+            ctx.beginPath();
+            ctx.arc(0, 0, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffff00'; // Yellow center
+            ctx.fill();
+
+            return new THREE.Texture(canvas);
         }
-        // createCrack(); // Disabled for cleaner video view
+        const flowerSprite = getFlowerSprite();
+        flowerSprite.needsUpdate = true;
 
-        // --- 2. PARTICLES ---
-        function createParticles(count, color, sizeBase) {
-            const geometry = new THREE.BufferGeometry();
-            const positions = [];
-            const colors = [];
-            const sizes = [];
-            const colorObj = new THREE.Color(color);
+        // ... [Existing Setup] ...
 
-            for (let i = 0; i < count; i++) {
-                const x = (Math.random() * 2 - 1) * 1200;
-                const y = (Math.random() * 2 - 1) * 1200;
-                const z = (Math.random() * 2 - 1) * 1200;
-                positions.push(x, y, z);
-                colors.push(colorObj.r, colorObj.g, colorObj.b);
-                sizes.push(sizeBase * Math.random());
-            }
-
-            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-            geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
-            geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
-
-            const material = new THREE.ShaderMaterial({
-                uniforms: {
-                    color: { value: new THREE.Color(0xffffff) },
-                    pointTexture: { value: particleSprite }
-                },
-                vertexShader: document.getElementById('vertexshader').textContent,
-                fragmentShader: document.getElementById('fragmentshader').textContent,
-                blending: THREE.AdditiveBlending,
-                depthTest: false,
-                transparent: true
-            });
-
-            const particles = new THREE.Points(geometry, material);
-            scene.add(particles);
-            return { mesh: particles, originalPositions: positions };
-        }
-
-        embers = createParticles(1500, 0xffaa00, 20);
-        cosmicDust = createParticles(2000, 0x4444ff, 10);
-        particleGroups.push(embers, cosmicDust);
-
-        // --- 3. SHIVA FORM ---
-        function createShivaForm() {
-            const geometry = new THREE.BufferGeometry();
-            const positions = [];
-            const colors = [];
-            const sizes = [];
-
-            const lightColor = new THREE.Color(0x00ffff);
-            const ashColor = new THREE.Color(0xaaaaaa);
-
-            const count = 10000;
-            for (let i = 0; i < count; i++) {
-                const theta = Math.random() * Math.PI * 2;
-                const h = Math.random() * 250;
-                let r = 0;
-                if (h < 50) r = 80;
-                else if (h < 150) r = 40 + Math.sin(h) * 10;
-                else r = 30;
-                r += (Math.random() - 0.5) * 10;
-
-                const x = r * Math.cos(theta);
-                const y = h - 120;
-                const z = r * Math.sin(theta);
-
-                positions.push(x, y, z);
-
-                if (Math.random() > 0.7) {
-                    colors.push(lightColor.r, lightColor.g, lightColor.b);
-                } else {
-                    colors.push(ashColor.r, ashColor.g, ashColor.b);
-                }
-
-                sizes.push(3 + Math.random() * 8);
-            }
-
-            for (let i = 0; i < 2000; i++) {
-                const y = (Math.random() * 500) - 100;
-                const x = (Math.random() - 0.5) * 10;
-                const z = (Math.random() - 0.5) * 10;
-                positions.push(x + 100, y, z);
-                colors.push(1, 0.8, 0.2);
-                sizes.push(10);
-            }
-
-            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-            geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
-            geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
-
-            const material = new THREE.ShaderMaterial({
-                uniforms: {
-                    color: { value: new THREE.Color(0xffffff) },
-                    pointTexture: { value: particleSprite }
-                },
-                vertexShader: document.getElementById('vertexshader').textContent,
-                fragmentShader: document.getElementById('fragmentshader').textContent,
-                blending: THREE.AdditiveBlending,
-                depthTest: false,
-                transparent: true,
-                opacity: 0
-            });
-
-            shivaForm = new THREE.Points(geometry, material);
-            shivaForm.material.opacity = 0;
-            shivaForm.position.z = -400;
-            scene.add(shivaForm);
-        }
-        // createShivaForm(); // Disabled for cleaner video view
-
-        // --- 4. BLESSING PARTICLES ---
+        // --- 4. BLESSING PARTICLES (FLOWERS) ---
         function createBlessingParticles() {
             const geometry = new THREE.BufferGeometry();
             const positions = [];
             const colors = [];
             const sizes = [];
-            for (let i = 0; i < 1000; i++) {
+            const angles = []; // For rotation
+
+            for (let i = 0; i < 500; i++) { // Fewer but larger particles
                 positions.push(0, 0, -200);
-                colors.push(1, 0.8, 0.2);
-                sizes.push(Math.random() * 30);
+                colors.push(1, 0.6, 0.6); // Pink tint
+                sizes.push(15 + Math.random() * 20); // Larger size for flowers
+                angles.push(Math.random() * Math.PI * 2);
             }
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
             geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
             geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+            geometry.setAttribute('angle', new THREE.Float32BufferAttribute(angles, 1)); // We'd need a custom shader for true rotation, but we'll simulate
+
             const mat = new THREE.ShaderMaterial({
-                uniforms: { color: { value: new THREE.Color(0xffffff) }, pointTexture: { value: particleSprite } },
+                uniforms: {
+                    color: { value: new THREE.Color(0xffffff) },
+                    pointTexture: { value: flowerSprite }
+                },
                 vertexShader: document.getElementById('vertexshader').textContent,
                 fragmentShader: document.getElementById('fragmentshader').textContent,
-                blending: THREE.AdditiveBlending, depthTest: false, transparent: true, opacity: 0
+                blending: THREE.NormalBlending, // Normal blending for solid flowers
+                depthTest: false,
+                transparent: true,
+                opacity: 0
             });
             blessingParticles = new THREE.Points(geometry, mat);
             scene.add(blessingParticles);
-            blessingParticles.userData = { velocities: [] };
-            for (let i = 0; i < 1000; i++) {
+
+            blessingParticles.userData = { velocities: [], phases: [] };
+            for (let i = 0; i < 500; i++) {
                 blessingParticles.userData.velocities.push({
-                    x: (Math.random() - 0.5) * 5,
-                    y: (Math.random() - 0.5) * 5,
-                    z: Math.random() * 20 + 5
+                    x: (Math.random() - 0.5) * 2,
+                    y: -(Math.random() * 2 + 1), // Always falling down
+                    z: 0
                 });
+                blessingParticles.userData.phases.push(Math.random() * Math.PI * 2); // For swaying
             }
         }
         createBlessingParticles();
+
+        // ... [In Animation Loop] ...
+        if (blessingParticles && shivaGodMesh) {
+            blessingParticles.material.opacity = shivaGodMesh.material.opacity;
+            const bPos = blessingParticles.geometry.attributes.position.array;
+            const bVels = blessingParticles.userData.velocities;
+            const bPhases = blessingParticles.userData.phases;
+
+            for (let i = 0; i < bVels.length; i++) {
+                // Falling Physics
+                const sway = Math.sin(time * 2 + bPhases[i]) * 0.5; // Gentle sway
+
+                bPos[i * 3] += bVels[i].x + sway; // X + Sway
+                bPos[i * 3 + 1] += bVels[i].y * config.audioSensitivity; // Y (Falling)
+                bPos[i * 3 + 2] += bVels[i].z;
+
+                // Respawn
+                if (bPos[i * 3 + 1] < -600) { // If fell below screen
+                    // Spawn at Hand position (Assuming Right Hand is roughly +50, +50 from center)
+                    bPos[i * 3] = shivaGodMesh.position.x + 60 + (Math.random() - 0.5) * 40;
+                    bPos[i * 3 + 1] = shivaGodMesh.position.y + 20 + (Math.random() - 0.5) * 40;
+                    bPos[i * 3 + 2] = shivaGodMesh.position.z + 50; // In front of Shiva
+                }
+            }
+            blessingParticles.geometry.attributes.position.needsUpdate = true;
+        }
 
         // --- 5. SPARKS ---
         function createSparks() {
@@ -644,18 +581,22 @@
                     blessingParticles.material.opacity = shivaGodMesh.material.opacity;
                     const bPos = blessingParticles.geometry.attributes.position.array;
                     const bVels = blessingParticles.userData.velocities;
+                    const bPhases = blessingParticles.userData.phases;
 
                     for (let i = 0; i < bVels.length; i++) {
-                        // Slow motion magical particles
-                        bPos[i * 3] += bVels[i].x * config.audioSensitivity * 0.5; // Slower x
-                        bPos[i * 3 + 1] += bVels[i].y * config.audioSensitivity * 0.5; // Slower y
-                        bPos[i * 3 + 2] += bVels[i].z * config.audioSensitivity * 1.5; // Forward movement
+                        // Falling Physics
+                        const sway = Math.sin(time * 2 + bPhases[i]) * 0.5; // Gentle sway
 
-                        // Respawn at Shiva's hand/base (approximate)
-                        if (bPos[i * 3 + 2] > 500) {
-                            bPos[i * 3] = shivaGodMesh.position.x + (Math.random() - 0.5) * 100;
-                            bPos[i * 3 + 1] = shivaGodMesh.position.y - 50 + (Math.random() - 0.5) * 50;
-                            bPos[i * 3 + 2] = shivaGodMesh.position.z;
+                        bPos[i * 3] += bVels[i].x + sway; // X + Sway
+                        bPos[i * 3 + 1] += bVels[i].y * config.audioSensitivity; // Y (Falling)
+                        bPos[i * 3 + 2] += bVels[i].z;
+
+                        // Respawn
+                        if (bPos[i * 3 + 1] < -600) { // If fell below screen
+                            // Spawn at Hand position (Assuming Right Hand is roughly +50, +50 from center)
+                            bPos[i * 3] = shivaGodMesh.position.x + 60 + (Math.random() - 0.5) * 40;
+                            bPos[i * 3 + 1] = shivaGodMesh.position.y + 20 + (Math.random() - 0.5) * 40;
+                            bPos[i * 3 + 2] = shivaGodMesh.position.z + 50; // In front of Shiva
                         }
                     }
                     blessingParticles.geometry.attributes.position.needsUpdate = true;
