@@ -426,25 +426,25 @@
         }
         createSparks();
 
-        // --- 6. GOD RAYS ---
-        function createGodRays() {
-            const geometry = new THREE.ConeGeometry(300, 1000, 32, 1, true);
-            const material = new THREE.MeshBasicMaterial({
-                color: 0xffffff,
-                transparent: true,
-                opacity: 0,
-                side: THREE.DoubleSide,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false
-            });
-            godRays = new THREE.Mesh(geometry, material);
-            godRays.position.set(0, 300, -400);
-            godRays.rotation.x = Math.PI;
-            for (let i = 0; i < geometry.attributes.position.count; i++) {
-                // Jitter vertices a bit for 'smoky' look if possible, but keep simple for now
-            }
-            scene.add(godRays);
+        // --- 6. SHIVA GOD IMAGE (Divine Descent) ---
+        let shivaGodMesh;
+        function createShivaGod() {
+            const loader = new THREE.TextureLoader();
+            loader.load('shiva_god.png', (texture) => {
+                const geometry = new THREE.PlaneGeometry(300, 300); // Adjust aspect ratio as needed
+                const material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    opacity: 0,
+                    side: THREE.DoubleSide
+                });
+                shivaGodMesh = new THREE.Mesh(geometry, material);
+                shivaGodMesh.position.set(0, 1000, -300); // Start high up
+                scene.add(shivaGodMesh);
+            }, undefined, (err) => console.error("Error loading Shiva image:", err));
         }
+        createShivaGod();
+
         // createGodRays(); // Disabled for cleaner video view
 
         // --- 7. AUDIO (Robust) ---
@@ -621,16 +621,21 @@
             }
 
             if (state.phase >= 4) {
-                if (shivaForm.material.opacity < 1) shivaForm.material.opacity += delta * 0.5;
-                shivaForm.position.z += 10 * delta;
+                // Animate Divine Descent
+                if (shivaGodMesh) {
+                    // Smooth descent to center (y=0)
+                    shivaGodMesh.position.y += (0 - shivaGodMesh.position.y) * 0.02;
+                    // Fade in
+                    if (shivaGodMesh.material.opacity < 1) shivaGodMesh.material.opacity += delta * 0.5;
 
-                if (godRays.material.opacity < 0.3) godRays.material.opacity += delta * 0.1;
-                godRays.rotation.y += delta * 0.1;
+                    // Gentle hover effect
+                    shivaGodMesh.position.y += Math.sin(time) * 0.5;
+                }
 
                 bloomPass.strength = config.bloomStrength * config.audioSensitivity + Math.sin(time) * 0.2;
 
-                if (blessingParticles) {
-                    blessingParticles.material.opacity = shivaForm.material.opacity;
+                if (blessingParticles && shivaGodMesh) {
+                    blessingParticles.material.opacity = shivaGodMesh.material.opacity;
                     const bPos = blessingParticles.geometry.attributes.position.array;
                     const bVels = blessingParticles.userData.velocities;
 
@@ -638,10 +643,12 @@
                         bPos[i * 3] += bVels[i].x * config.audioSensitivity;
                         bPos[i * 3 + 1] += bVels[i].y * config.audioSensitivity;
                         bPos[i * 3 + 2] += bVels[i].z * config.audioSensitivity * 2;
-                        if (bPos[i * 3 + 2] > 1000) {
-                            bPos[i * 3] = shivaForm.position.x + (Math.random() - 0.5) * 50;
-                            bPos[i * 3 + 1] = shivaForm.position.y + (Math.random() - 0.5) * 50;
-                            bPos[i * 3 + 2] = shivaForm.position.z;
+
+                        // Respawn at Shiva's hand/base (approximate)
+                        if (bPos[i * 3 + 2] > 500) {
+                            bPos[i * 3] = shivaGodMesh.position.x + (Math.random() - 0.5) * 100;
+                            bPos[i * 3 + 1] = shivaGodMesh.position.y - 50 + (Math.random() - 0.5) * 50;
+                            bPos[i * 3 + 2] = shivaGodMesh.position.z;
                         }
                     }
                     blessingParticles.geometry.attributes.position.needsUpdate = true;
