@@ -255,7 +255,7 @@
             crackMesh = new THREE.Line(geometry, material);
             scene.add(crackMesh);
         }
-        createCrack();
+        // createCrack(); // Disabled for cleaner video view
 
         // --- 2. PARTICLES ---
         function createParticles(count, color, sizeBase) {
@@ -365,7 +365,7 @@
             shivaForm.position.z = -400;
             scene.add(shivaForm);
         }
-        createShivaForm();
+        // createShivaForm(); // Disabled for cleaner video view
 
         // --- 4. BLESSING PARTICLES ---
         function createBlessingParticles() {
@@ -445,7 +445,7 @@
             }
             scene.add(godRays);
         }
-        createGodRays();
+        // createGodRays(); // Disabled for cleaner video view
 
         // --- 7. AUDIO (Robust) ---
         let audioContext, analyser, dataArray;
@@ -531,24 +531,15 @@
             flash.style.opacity = 1;
             setTimeout(() => { flash.style.opacity = 0; }, 150);
 
+            // Removing central VFX as requested
+            /*
             const geo1 = new THREE.TorusGeometry(10, 5, 16, 100);
-            const mat1 = new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
-            shockwaveGold = new THREE.Mesh(geo1, mat1);
-            shockwaveGold.rotation.x = Math.PI / 2;
-            shockwaveGold.position.y = -100;
-            shockwaveGold.position.z = -400;
-            scene.add(shockwaveGold);
-
-            const geo2 = new THREE.TorusGeometry(20, 10, 16, 100);
-            const mat2 = new THREE.MeshBasicMaterial({ color: 0x2e0057, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending });
-            shockwaveBlue = new THREE.Mesh(geo2, mat2);
-            shockwaveBlue.rotation.x = Math.PI / 2;
-            shockwaveBlue.position.y = -100;
-            shockwaveBlue.position.z = -400;
+            ...
             scene.add(shockwaveBlue);
 
             sparks.visible = true;
             sparks.userData.active = true;
+            */
         }
 
 
@@ -595,19 +586,26 @@
             }
             camera.lookAt(0, 0, -400);
 
-            if (state.phase === 2 && crackMesh) {
-                crackMesh.material.opacity = Math.min(1, crackMesh.material.opacity + delta);
-                crackMesh.scale.x = 1 + Math.random() * 0.1;
-            }
+            // Disable Crack for cleaner video view
+            // if (state.phase === 2 && crackMesh) {
+            //     crackMesh.material.opacity = Math.min(1, crackMesh.material.opacity + delta);
+            //     crackMesh.scale.x = 1 + Math.random() * 0.1; 
+            // }
 
-            if (shockwaveGold) {
-                shockwaveGold.scale.multiplyScalar(1 + (3 * delta));
-                shockwaveGold.material.opacity -= delta * 0.5;
-            }
-            if (shockwaveBlue) {
-                shockwaveBlue.scale.multiplyScalar(1 + (2 * delta));
-                shockwaveBlue.material.opacity -= delta * 0.3;
-            }
+            // Disable Shockwaves
+            // if (shockwaveGold) {
+            //     shockwaveGold.scale.multiplyScalar(1 + (3 * delta));
+            //     shockwaveGold.material.opacity -= delta * 0.5;
+            // }
+            // if (shockwaveBlue) {
+            //     shockwaveBlue.scale.multiplyScalar(1 + (2 * delta)); 
+            //     shockwaveBlue.material.opacity -= delta * 0.3;
+            // }
+
+            // Disable Sparks
+            // if (sparks && sparks.userData.active) {
+            //     ...
+            // }
 
             if (sparks && sparks.userData.active) {
                 const pos = sparks.geometry.attributes.position.array;
