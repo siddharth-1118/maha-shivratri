@@ -106,7 +106,7 @@
 <body>
 
     <video id="bg-video" loop muted playsinline>
-        <source src="Amazing_Video_With_VFX_and_Music.mp4" type="video/mp4">
+        <source src="video.mp4" type="video/mp4">
     </video>
 
     <div id="vignette"></div>
@@ -434,20 +434,26 @@
 
         // --- 6. SHIVA GOD IMAGE (Divine Descent) ---
         // shivaGodMesh declared globally
+        // shivaGodMesh declared globally
         function createShivaGod() {
             const loader = new THREE.TextureLoader();
-            // Reverting to existing image as generation failed
-            loader.load('shiva_god.png', (texture) => {
-                const geometry = new THREE.PlaneGeometry(400, 400); // Increased size for better impact
+            // Using the specific image requested by user
+            loader.load('Gemini_Generated_Image_ubidmiubidmiubid.png', (texture) => {
+                // Calculate size to fill screen at z=0 with camera at z=1000
+                const vFOV = THREE.Math.degToRad(camera.fov); // convert vertical fov to radians
+                const height = 2 * Math.tan(vFOV / 2) * 1000; // visible height
+                const width = height * camera.aspect;           // visible width
+
+                const geometry = new THREE.PlaneGeometry(width, height);
                 const material = new THREE.MeshBasicMaterial({
                     map: texture,
                     transparent: true,
                     opacity: 0,
                     side: THREE.DoubleSide,
-                    blending: THREE.AdditiveBlending // Additive blending for "glowing" look
+                    blending: THREE.NormalBlending // Normal blending for full opaque image
                 });
                 shivaGodMesh = new THREE.Mesh(geometry, material);
-                shivaGodMesh.position.set(0, 1000, -300); // Start high up
+                shivaGodMesh.position.set(0, 500, -100); // Start higher, slightly behind particles
                 scene.add(shivaGodMesh);
             }, undefined, (err) => console.error("Error loading Shiva image:", err));
         }
@@ -664,10 +670,11 @@
 
                         // Respawn
                         if (bPos[i * 3 + 1] < -600) { // If fell below screen
-                            // Spawn at Hand position (Assuming Right Hand is roughly +50, +50 from center)
-                            bPos[i * 3] = shivaGodMesh.position.x + 60 + (Math.random() - 0.5) * 40;
-                            bPos[i * 3 + 1] = shivaGodMesh.position.y + 20 + (Math.random() - 0.5) * 40;
-                            bPos[i * 3 + 2] = shivaGodMesh.position.z + 50; // In front of Shiva
+                            // Spawn at random top positions or specific "hand" area if verifiable
+                            // For full screen image, let's rain from the top-center area
+                            bPos[i * 3] = (Math.random() - 0.5) * window.innerWidth / 2;
+                            bPos[i * 3 + 1] = 400 + Math.random() * 200;
+                            bPos[i * 3 + 2] = 100; // In front of Shiva
                         }
                     }
                     blessingParticles.geometry.attributes.position.needsUpdate = true;
