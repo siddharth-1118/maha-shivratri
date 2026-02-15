@@ -34,6 +34,7 @@
             justify-content: center;
             align-items: center;
             text-align: center;
+            transition: opacity 2s ease-out;
         }
 
         #start-btn {
@@ -59,11 +60,9 @@
 
         .fade-out {
             opacity: 0;
-            transition: opacity 2s ease-out;
             pointer-events: none !important;
         }
 
-        /* Vignette Overlay */
         #vignette {
             position: absolute;
             top: 0;
@@ -75,7 +74,6 @@
             pointer-events: none;
         }
 
-        /* Flash Effect */
         #flash {
             position: absolute;
             top: 0;
@@ -89,7 +87,6 @@
             transition: opacity 0.1s ease-out;
         }
     </style>
-    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
@@ -104,7 +101,6 @@
         <button id="start-btn">Enter Interaction</button>
     </div>
 
-    <!-- Three.js & Post Processing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
@@ -113,7 +109,6 @@
     <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
 
-    <!-- Custom Particle Shaders -->
     <script type="x-shader/x-vertex" id="vertexshader">
         attribute float size;
         attribute vec3 customColor;
@@ -137,21 +132,21 @@
     </script>
 
     <script>
-        // --- 1. CONFIG & STATE ---
         const config = {
             bloomStrength: 1.5,
             bloomRadius: 0.4,
             bloomThreshold: 0,
-            audioSensitivity: 1.0 // will be modulated
+            audioSensitivity: 1.0
         };
 
+        // State
         let state = {
-            phase: 0, // 0: Start, 1: Void, 2: Disturbance, 3: Impact, 4: Reveal
+            phase: 0,
             time: 0,
-            shakeIntensity: 0
+            shakeIntensity: 0,
+            shivaZ: 0 // New: Track Shiva's forward movement
         };
 
-        // --- 2. THREE.JS SETUP ---
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x000000, 0.002);
 
@@ -164,7 +159,6 @@
         renderer.toneMapping = THREE.ReinhardToneMapping;
         document.body.appendChild(renderer.domElement);
 
-        // --- 3. POST PROCESSING (BLOOM) ---
         const renderScene = new THREE.RenderPass(scene, camera);
         const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
         bloomPass.threshold = config.bloomThreshold;
@@ -175,9 +169,6 @@
         composer.addPass(renderScene);
         composer.addPass(bloomPass);
 
-        // --- 4. PARTICLE SYSTEMS ---
-
-        // Helper to create texture
         function getSprite() {
             const canvas = document.createElement('canvas');
             canvas.width = 32;
@@ -190,15 +181,13 @@
             grad.addColorStop(1, 'rgba(0,0,0,0)');
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, 32, 32);
-            const texture = new THREE.Texture(canvas);
-            texture.needsUpdate = true;
-            return texture;
+            return new THREE.Texture(canvas);
         }
 
         const particleSprite = getSprite();
+        particleSprite.needsUpdate = true;
 
-        // SYSTEMS
-        let embers, cosmicDust, shockwave, shivaForm;
+        let embers, cosmicDust, shockwave, shivaForm, blessingParticles;
         const particleGroups = [];
 
         function createParticles(count, color, sizeBase, type) {
@@ -209,7 +198,6 @@
             const colorObj = new THREE.Color(color);
 
             for (let i = 0; i < count; i++) {
-                // Random position in a sphere/cube
                 const x = (Math.random() * 2 - 1) * 1000;
                 const y = (Math.random() * 2 - 1) * 1000;
                 const z = (Math.random() * 2 - 1) * 1000;
@@ -237,32 +225,29 @@
             const particles = new THREE.Points(geometry, material);
             scene.add(particles);
 
-            return { mesh: particles, type: type, originalPositions: positions, speeds: [] };
+            return { mesh: particles, type: type, originalPositions: positions };
         }
 
-        // Initialize Systems
-        embers = createParticles(2000, 0xffaa00, 20, 'embers');     // Gold
-        cosmicDust = createParticles(3000, 0x4444ff, 10, 'dust');   // Blue
+        embers = createParticles(2000, 0xffaa00, 20, 'embers');
+        cosmicDust = createParticles(3000, 0x4444ff, 10, 'dust');
         particleGroups.push(embers, cosmicDust);
 
-        // Trishul / Shiva Form Geometry (Procedural Representation)
         function createShivaForm() {
             const geometry = new THREE.BufferGeometry();
             const positions = [];
             const colors = [];
             const sizes = [];
-            const colorObj = new THREE.Color(0x00ffff); // Cyan/White divine light
+            // Cyan/White glow
+            const colorObj = new THREE.Color(0x00ffff);
 
-            // Create a vague silhouette of a seated figure + Trident
-            const count = 5000;
+            const count = 7000;
             for (let i = 0; i < count; i++) {
-                // Cylindrical coords for body
                 const theta = Math.random() * Math.PI * 2;
-                const h = Math.random() * 200; // height
-                const r = 20 + Math.random() * 20 * Math.sin(h / 200 * Math.PI); // rough body shape
+                const h = Math.random() * 200;
+                const r = 20 + Math.random() * 25 * Math.sin(h / 200 * Math.PI); // Body shape
 
                 const x = r * Math.cos(theta);
-                const y = h - 100; // Center vertically
+                const y = h - 100;
                 const z = r * Math.sin(theta);
 
                 positions.push(x, y, z);
@@ -270,13 +255,13 @@
                 sizes.push(5 + Math.random() * 10);
             }
 
-            // Trident (Stick + Prongs)
-            for (let i = 0; i < 1000; i++) {
-                const y = (Math.random() * 400) - 100;
-                const x = (Math.random() - 0.5) * 10;
-                const z = (Math.random() - 0.5) * 10;
-                positions.push(x + 100, y, z); // Offset trident
-                colors.push(1, 0.8, 0); // Gold
+            // Trident
+            for (let i = 0; i < 1500; i++) {
+                const y = (Math.random() * 450) - 100;
+                const x = (Math.random() - 0.5) * 15;
+                const z = (Math.random() - 0.5) * 15;
+                positions.push(x + 120, y, z);
+                colors.push(1, 0.9, 0.2); // Gold
                 sizes.push(15);
             }
 
@@ -294,21 +279,66 @@
                 blending: THREE.AdditiveBlending,
                 depthTest: false,
                 transparent: true,
-                opacity: 0 // Start invisible
+                opacity: 0
             });
 
             shivaForm = new THREE.Points(geometry, material);
-            shivaForm.material.opacity = 0; // Ensure invisible start
-            shivaForm.visible = false;
+            shivaForm.material.opacity = 0;
+            // Start further back
+            shivaForm.position.z = -500;
             scene.add(shivaForm);
         }
 
         createShivaForm();
 
+        // Blessing Stream
+        function createBlessingParticles() {
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+            const sizes = [];
+            const count = 1000;
 
-        // --- 5. AUDIO SYSTEM ---
+            for (let i = 0; i < count; i++) {
+                // Emit from approx hand position
+                positions.push(0, 0, -200);
+                colors.push(1, 0.8, 0.2); // Golden
+                sizes.push(Math.random() * 30);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    color: { value: new THREE.Color(0xffffff) },
+                    pointTexture: { value: particleSprite }
+                },
+                vertexShader: document.getElementById('vertexshader').textContent,
+                fragmentShader: document.getElementById('fragmentshader').textContent,
+                blending: THREE.AdditiveBlending,
+                depthTest: false,
+                transparent: true,
+                opacity: 0
+            });
+
+            blessingParticles = new THREE.Points(geometry, material);
+            scene.add(blessingParticles);
+            // Storing velocities in userData for simplicity
+            blessingParticles.userData = { velocities: [] };
+            for (let i = 0; i < count; i++) {
+                blessingParticles.userData.velocities.push({
+                    x: (Math.random() - 0.5) * 5,
+                    y: (Math.random() - 0.5) * 5,
+                    z: Math.random() * 20 + 5
+                });
+            }
+        }
+        createBlessingParticles();
+
+
         let audioContext, analyser, dataArray;
-        let audioLevel = 0;
 
         function initAudio() {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -316,10 +346,7 @@
             analyser.fftSize = 256;
             dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-            // Simple Oscillator drone for "Om" if no file, but user requested file.
-            // We will attempt to load file, fall back to oscillator if interaction allows.
-
-            const audioEl = new Audio('shiva_mantra.mp3'); // Try to load
+            const audioEl = new Audio('shiva_mantra.mp3');
             audioEl.crossOrigin = "anonymous";
             audioEl.loop = true;
 
@@ -328,32 +355,26 @@
             analyser.connect(audioContext.destination);
 
             audioEl.play().then(() => {
-                console.log("Audio playing");
                 startTimeline();
             }).catch(e => {
-                console.warn("Audio play failed, starting silent timeline:", e);
-                startTimeline(true); // silent mode
+                console.warn(e);
+                startTimeline(true);
             });
         }
 
-        // --- 6. NARRATIVE TIMELINE ---
         function startTimeline(silent) {
-            state.phase = 1; // VOID
-            const startTime = Date.now();
+            state.phase = 1;
 
-            // Phase 2: DISTURBANCE starts at 3s
             setTimeout(() => {
                 state.phase = 2;
                 state.shakeIntensity = 5;
             }, 3000);
 
-            // Phase 3: IMPACT at 6s
             setTimeout(() => {
                 state.phase = 3;
                 triggerImpact();
             }, 6000);
 
-            // Phase 4: REVEAL at 7s
             setTimeout(() => {
                 state.phase = 4;
                 revealShiva();
@@ -361,12 +382,10 @@
         }
 
         function triggerImpact() {
-            // Flash Screen
             const flash = document.getElementById('flash');
             flash.style.opacity = 1;
             setTimeout(() => { flash.style.opacity = 0; }, 200);
 
-            // Create Shockwave Ring
             const geometry = new THREE.TorusGeometry(10, 5, 16, 100);
             const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
             shockwave = new THREE.Mesh(geometry, material);
@@ -375,42 +394,20 @@
         }
 
         function revealShiva() {
-            shivaForm.visible = true;
-            // Animate opacity in render loop via uniform or property
+            // Logic handled in animate loop
         }
 
-
-        // --- 7. INTERACTION ---
         const mouse = new THREE.Vector2();
-
         document.addEventListener('mousemove', (event) => {
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         });
 
-        document.addEventListener('touchmove', (event) => {
-            if (event.touches.length > 0) {
-                mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
-                mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
-            }
-        });
-
-        // Damru Ripple on click
-        document.addEventListener('click', () => {
-            if (state.phase >= 4) {
-                // Pulse effect in revealed state
-                bloomPass.strength = 3.0;
-                setTimeout(() => { bloomPass.strength = config.bloomStrength; }, 300);
-            }
-        });
-
         document.getElementById('start-btn').addEventListener('click', () => {
             document.getElementById('ui-layer').classList.add('fade-out');
-            initAudio(); // Start Audio Context
+            initAudio();
         });
 
-
-        // --- 8. RENDER LOOP ---
         const clock = new THREE.Clock();
 
         function animate() {
@@ -419,52 +416,34 @@
             const delta = clock.getDelta();
             const time = clock.getElapsedTime();
 
-            // Audio Analysis
             if (analyser) {
                 analyser.getByteFrequencyData(dataArray);
                 const avg = dataArray.reduce((a, b) => a + b) / dataArray.length;
-                config.audioSensitivity = 1 + (avg / 128); // 1.0 to 3.0 approx
+                config.audioSensitivity = 1 + (avg / 128);
             }
 
-            // 1. Camera Movement (Parallax + Shake)
             const baseCamX = mouse.x * 50;
             const baseCamY = mouse.y * 50;
 
             if (state.phase === 2) {
-                // Shake
                 camera.position.x = baseCamX + (Math.random() - 0.5) * state.shakeIntensity;
                 camera.position.y = baseCamY + (Math.random() - 0.5) * state.shakeIntensity;
             } else {
-                // Smooth Lerp
                 camera.position.x += (baseCamX - camera.position.x) * 0.05;
                 camera.position.y += (baseCamY - camera.position.y) * 0.05;
             }
             camera.lookAt(scene.position);
 
-
-            // 2. Particle Animation
             particleGroups.forEach(group => {
                 const positions = group.mesh.geometry.attributes.position.array;
-
                 for (let i = 0; i < positions.length; i += 3) {
-                    // Start Position restoration logic could go here
-                    // Simple flow:
-                    positions[i + 1] += (0.5 * config.audioSensitivity); // Move up
-
-                    // Reset if out of bounds
+                    positions[i + 1] += (0.5 * config.audioSensitivity);
                     if (positions[i + 1] > 1000) positions[i + 1] = -1000;
-
-                    // Mouse Interaction (Repel)
-                    if (state.phase >= 4) {
-                        // Logic to swirl particles?
-                    }
                 }
                 group.mesh.geometry.attributes.position.needsUpdate = true;
-                group.mesh.rotation.y = time * 0.05; // Rotate whole system
+                group.mesh.rotation.y = time * 0.05;
             });
 
-
-            // 3. Phase Logic
             if (state.phase === 3 && shockwave) {
                 shockwave.scale.x += 20 * delta;
                 shockwave.scale.y += 20 * delta;
@@ -475,23 +454,51 @@
                 }
             }
 
+            // Phase 4: Reveal, Approach, and Bless
             if (state.phase === 4 && shivaForm) {
-                shivaForm.rotation.y += 0.02 * delta;
-                // Pulse size
+                shivaForm.visible = true;
+
+                // 1. Movement: Approach camera (from -500 to 0)
+                if (shivaForm.position.z < 0) {
+                    shivaForm.position.z += 100 * delta; // Speed of approach
+                }
+
+                // 2. Pulse & Rotate
                 const scale = 1 + Math.sin(time * 2) * 0.05 * config.audioSensitivity;
                 shivaForm.scale.set(scale, scale, scale);
+                shivaForm.rotation.y += 0.01 * delta;
 
-                // Fade in
-                if (shivaForm.material.opacity < 0.8) shivaForm.material.opacity += 0.01;
+                // 3. Fade in
+                if (shivaForm.material.opacity < 1.0) shivaForm.material.opacity += 0.02;
+
+                // 4. Blessing Particles
+                if (blessingParticles) {
+                    blessingParticles.material.opacity = shivaForm.material.opacity;
+                    const bPos = blessingParticles.geometry.attributes.position.array;
+                    const bVels = blessingParticles.userData.velocities;
+
+                    for (let i = 0; i < bVels.length; i++) {
+                        // Move Forward towards camera + spread
+                        bPos[i * 3] += bVels[i].x * config.audioSensitivity;
+                        bPos[i * 3 + 1] += bVels[i].y * config.audioSensitivity;
+                        bPos[i * 3 + 2] += bVels[i].z * config.audioSensitivity * 2; // Fast forward
+
+                        // Reset if passed camera
+                        if (bPos[i * 3 + 2] > 1000) {
+                            // Reset to Shiva's current position (approx)
+                            bPos[i * 3] = shivaForm.position.x + (Math.random() - 0.5) * 50;
+                            bPos[i * 3 + 1] = shivaForm.position.y + (Math.random() - 0.5) * 50;
+                            bPos[i * 3 + 2] = shivaForm.position.z;
+                        }
+                    }
+                    blessingParticles.geometry.attributes.position.needsUpdate = true;
+                }
             }
 
-            // Bloom Pulse with Audio
             bloomPass.strength = THREE.MathUtils.lerp(bloomPass.strength, config.bloomStrength * config.audioSensitivity, 0.1);
-
             composer.render();
         }
 
-        // Handle Resize
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -500,7 +507,6 @@
         });
 
         animate();
-
     </script>
 </body>
 
