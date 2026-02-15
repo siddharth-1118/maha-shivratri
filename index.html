@@ -388,8 +388,8 @@
         // shivaGodMesh declared globally
         function createShivaGod() {
             const loader = new THREE.TextureLoader();
-            // Using the new Cinematic Blessing image
-            loader.load('shiva_blessing_cinematic.png', (texture) => {
+            // Reverting to existing image as generation failed
+            loader.load('shiva_god.png', (texture) => {
                 const geometry = new THREE.PlaneGeometry(400, 400); // Increased size for better impact
                 const material = new THREE.MeshBasicMaterial({
                     map: texture,
