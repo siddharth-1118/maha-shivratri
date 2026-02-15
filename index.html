@@ -116,7 +116,55 @@
         <h1 style="color: white; font-size: 1rem; letter-spacing: 3px; margin-bottom: 2rem; opacity: 0.7;">Experience
             the Void</h1>
         <button id="start-btn">Enter Interaction</button>
+        <button id="bless-btn" style="display: none;">Receive Blessing</button>
     </div>
+
+    <style>
+        /* ... existing styles ... */
+        #bless-btn {
+            pointer-events: auto;
+            background: transparent;
+            color: #ffd700;
+            border: 2px solid #ffd700;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            cursor: pointer;
+            transition: all 0.5s;
+            font-family: inherit;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+            margin-top: 20px;
+            opacity: 0;
+            animation: fadeInBtn 2s forwards;
+        }
+
+        #bless-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.8);
+            transform: scale(1.1);
+        }
+
+        @keyframes fadeInBtn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        #final-fade {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            opacity: 0;
+            z-index: 100;
+            pointer-events: none;
+            transition: opacity 5s ease-in-out;
+        }
+    </style>
+    <div id="final-fade"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
@@ -471,35 +519,46 @@
         function startTimeline() {
             state.phase = 1;
 
+            // Wait for video to play a bit, then show Blessing Button
             setTimeout(() => {
-                state.phase = 2;
-                state.shakeIntensity = 5;
-            }, 3000);
-
-            setTimeout(() => {
-                state.phase = 3;
-                triggerImpact();
-            }, 6000);
-
-            setTimeout(() => {
-                state.phase = 4;
-            }, 7000);
+                const blessBtn = document.getElementById('bless-btn');
+                blessBtn.style.display = 'block';
+                // Move button to center if needed, or hide start button logic handled elsewhere
+            }, 5000); // 5 seconds after start
         }
+
+        // Event Listener for Blessing Button
+        document.getElementById('bless-btn').addEventListener('click', () => {
+            const blessBtn = document.getElementById('bless-btn');
+            blessBtn.style.opacity = '0';
+            setTimeout(() => blessBtn.style.display = 'none', 500);
+
+            // Trigger Divine Descent
+            state.phase = 4;
+            triggerImpact(); // Yellow light/flash
+
+            // Trigger Final Fade Out
+            setTimeout(() => {
+                document.getElementById('final-fade').style.opacity = 1;
+            }, 8000); // 8 seconds after blessing
+        });
 
         function triggerImpact() {
             const flash = document.getElementById('flash');
             flash.style.opacity = 1;
-            setTimeout(() => { flash.style.opacity = 0; }, 150);
+            setTimeout(() => { flash.style.opacity = 0; }, 1000); // Longer flash for "Yellow Light"
 
-            // Removing central VFX as requested
-            /*
-            const geo1 = new THREE.TorusGeometry(10, 5, 16, 100);
-            ...
-            scene.add(shockwaveBlue);
-
-            sparks.visible = true;
-            sparks.userData.active = true;
-            */
+            // Enable shockwave for the "Yellow Light" effect
+            if (!shockwaveGold) {
+                const geometry = new THREE.TorusGeometry(10, 5, 16, 100);
+                const material = new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 1 });
+                shockwaveGold = new THREE.Mesh(geometry, material);
+                shockwaveGold.rotation.x = Math.PI / 2;
+                scene.add(shockwaveGold);
+            } else {
+                shockwaveGold.scale.set(1, 1, 1);
+                shockwaveGold.material.opacity = 1;
+            }
         }
 
 
@@ -552,20 +611,11 @@
             //     crackMesh.scale.x = 1 + Math.random() * 0.1; 
             // }
 
-            // Disable Shockwaves
-            // if (shockwaveGold) {
-            //     shockwaveGold.scale.multiplyScalar(1 + (3 * delta));
-            //     shockwaveGold.material.opacity -= delta * 0.5;
-            // }
-            // if (shockwaveBlue) {
-            //     shockwaveBlue.scale.multiplyScalar(1 + (2 * delta)); 
-            //     shockwaveBlue.material.opacity -= delta * 0.3;
-            // }
-
-            // Disable Sparks
-            // if (sparks && sparks.userData.active) {
-            //     ...
-            // }
+            // Shockwave Animation (Restored for Yellow Light)
+            if (shockwaveGold && state.phase >= 4) {
+                shockwaveGold.scale.multiplyScalar(1 + (2 * delta));
+                shockwaveGold.material.opacity -= delta * 0.5;
+            }
 
             if (sparks && sparks.userData.active) {
                 const pos = sparks.geometry.attributes.position.array;
